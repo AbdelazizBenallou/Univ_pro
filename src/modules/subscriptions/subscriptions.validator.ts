@@ -12,7 +12,7 @@ export const listSubscriptionsSchema = z.object({
 });
 
 export const createSubscriptionDemandSchema = z.object({
-  semester_id: z.number({ required_error: "semester_id is required" }).int().positive(),
+  semester_id: z.number().int().positive(),
   type: z.literal("premium").optional().default("premium"),
   speciality_id: z.number().int().positive().optional(),
 });

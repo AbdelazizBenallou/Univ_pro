@@ -16,7 +16,7 @@ export async function scanFile(filePath: string): Promise<ScanResult> {
   }
 
   try {
-    const { stdout } = await new Promise<string>((resolve, reject) => {
+    const stdout = await new Promise<string>((resolve, reject) => {
       execFile(
         CLAMSCAN_BIN,
         ["--no-summary", filePath],
@@ -26,7 +26,7 @@ export async function scanFile(filePath: string): Promise<ScanResult> {
             reject(new Error(stderr || err.message));
             return;
           }
-          resolve(stdout);
+          resolve(stdout as string);
         },
       );
     });

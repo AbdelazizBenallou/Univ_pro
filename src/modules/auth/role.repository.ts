@@ -1,30 +1,30 @@
 import prisma from "../../../framework/config/prisma.js";
 
 export const roleRepository = {
-  async findByName(name: string): Promise<{ role_id: number } | null> {
-    return prisma.role.findUnique({
+  async findByName(name: string): Promise<{ id: number } | null> {
+    return prisma.roles.findUnique({
       where: { name },
-      select: { role_id: true },
+      select: { id: true },
     });
   },
 
   async getRolesByUserId(userId: number): Promise<string[]> {
-    const userRoles = await prisma.userRole.findMany({
+    const userRoles = await prisma.user_roles.findMany({
       where: { user_id: userId },
-      include: { role: { select: { name: true } } },
+      include: { roles: { select: { name: true } } },
     });
 
-    return userRoles.map((ur) => ur.role.name);
+    return userRoles.map((ur) => ur.roles.name);
   },
 
   async getPermissionsByUserId(userId: number): Promise<string[]> {
-    const userRoles = await prisma.userRole.findMany({
+    const userRoles = await prisma.user_roles.findMany({
       where: { user_id: userId },
       include: {
-        role: {
+        roles: {
           include: {
-            role_permission: {
-              include: { permission: true },
+            role_permissions: {
+              include: { permissions: true },
             },
           },
         },
@@ -32,7 +32,7 @@ export const roleRepository = {
     });
 
     return userRoles.flatMap((ur) =>
-      ur.role.role_permission.map((rp) => rp.permission.name)
+      ur.roles.role_permissions.map((rp) => rp.permissions.name)
     );
   },
 };

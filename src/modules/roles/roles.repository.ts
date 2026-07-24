@@ -1,186 +1,186 @@
 import prisma from "../../../framework/config/prisma.js";
 
 type PermissionResponse = {
-  permission_id: number;
+  id: number;
   name: string;
 };
 
 export const roleRepository = {
-  async findAll(): Promise<{ role_id: number; name: string }[]> {
-    return prisma.role.findMany({
-      select: { role_id: true, name: true },
-      orderBy: { role_id: "asc" },
+  async findAll(): Promise<{ id: number; name: string }[]> {
+    return prisma.roles.findMany({
+      select: { id: true, name: true },
+      orderBy: { id: "asc" },
     });
   },
 
-  async findById(id: number): Promise<{ role_id: number; name: string } | null> {
-    return prisma.role.findUnique({
-      where: { role_id: id },
-      select: { role_id: true, name: true },
+  async findById(id: number): Promise<{ id: number; name: string } | null> {
+    return prisma.roles.findUnique({
+      where: { id },
+      select: { id: true, name: true },
     });
   },
 
-  async findByName(name: string): Promise<{ role_id: number } | null> {
-    return prisma.role.findUnique({
+  async findByName(name: string): Promise<{ id: number } | null> {
+    return prisma.roles.findUnique({
       where: { name },
-      select: { role_id: true },
+      select: { id: true },
     });
   },
 
-  async create(name: string): Promise<{ role_id: number; name: string }> {
-    return prisma.role.create({
+  async create(name: string): Promise<{ id: number; name: string }> {
+    return prisma.roles.create({
       data: { name },
-      select: { role_id: true, name: true },
+      select: { id: true, name: true },
     });
   },
 
-  async update(id: number, name: string): Promise<{ role_id: number; name: string }> {
-    return prisma.role.update({
-      where: { role_id: id },
+  async update(id: number, name: string): Promise<{ id: number; name: string }> {
+    return prisma.roles.update({
+      where: { id },
       data: { name },
-      select: { role_id: true, name: true },
+      select: { id: true, name: true },
     });
   },
 
   async countUsersByRoleId(id: number): Promise<number> {
-    return prisma.userRole.count({ where: { role_id: id } });
+    return prisma.user_roles.count({ where: { role_id: id } });
   },
 
   async delete(id: number): Promise<void> {
-    await prisma.role.delete({ where: { role_id: id } });
+    await prisma.roles.delete({ where: { id } });
   },
 
   async findAllPermissions(): Promise<PermissionResponse[]> {
-    return prisma.permission.findMany({
-      select: { permission_id: true, name: true },
-      orderBy: { permission_id: "asc" },
+    return prisma.permissions.findMany({
+      select: { id: true, name: true },
+      orderBy: { id: "asc" },
     });
   },
 
   async findPermissionById(id: number): Promise<PermissionResponse | null> {
-    return prisma.permission.findUnique({
-      where: { permission_id: id },
-      select: { permission_id: true, name: true },
+    return prisma.permissions.findUnique({
+      where: { id },
+      select: { id: true, name: true },
     });
   },
 
-  async findPermissionByName(name: string): Promise<{ permission_id: number } | null> {
-    return prisma.permission.findUnique({
+  async findPermissionByName(name: string): Promise<{ id: number } | null> {
+    return prisma.permissions.findUnique({
       where: { name },
-      select: { permission_id: true },
+      select: { id: true },
     });
   },
 
   async createPermission(name: string): Promise<PermissionResponse> {
-    return prisma.permission.create({
+    return prisma.permissions.create({
       data: { name },
-      select: { permission_id: true, name: true },
+      select: { id: true, name: true },
     });
   },
 
   async updatePermission(id: number, name: string): Promise<PermissionResponse> {
-    return prisma.permission.update({
-      where: { permission_id: id },
+    return prisma.permissions.update({
+      where: { id },
       data: { name },
-      select: { permission_id: true, name: true },
+      select: { id: true, name: true },
     });
   },
 
   async countRolesByPermissionId(id: number): Promise<number> {
-    return prisma.rolePermission.count({ where: { permission_id: id } });
+    return prisma.role_permissions.count({ where: { permission_id: id } });
   },
 
   async deletePermission(id: number): Promise<void> {
-    await prisma.permission.delete({ where: { permission_id: id } });
+    await prisma.permissions.delete({ where: { id } });
   },
 
   async getPermissionsByRoleId(roleId: number): Promise<PermissionResponse[]> {
-    const rolePermissions = await prisma.rolePermission.findMany({
+    const rolePermissions = await prisma.role_permissions.findMany({
       where: { role_id: roleId },
-      include: { permission: { select: { permission_id: true, name: true } } },
+      include: { permissions: { select: { id: true, name: true } } },
     });
 
-    return rolePermissions.map((rp) => rp.permission);
+    return rolePermissions.map((rp) => rp.permissions);
   },
 
   async addPermissionToRole(roleId: number, permissionId: number): Promise<void> {
-    await prisma.rolePermission.create({
+    await prisma.role_permissions.create({
       data: { role_id: roleId, permission_id: permissionId },
     });
   },
 
   async removePermissionFromRole(roleId: number, permissionId: number): Promise<void> {
-    await prisma.rolePermission.delete({
+    await prisma.role_permissions.delete({
       where: { role_id_permission_id: { role_id: roleId, permission_id: permissionId } },
     });
   },
 
   async isPermissionAssignedToRole(roleId: number, permissionId: number): Promise<boolean> {
-    const rp = await prisma.rolePermission.findUnique({
+    const rp = await prisma.role_permissions.findUnique({
       where: { role_id_permission_id: { role_id: roleId, permission_id: permissionId } },
     });
     return rp !== null;
   },
 
-  async findUserById(id: number): Promise<{ user_id: number } | null> {
-    return prisma.user.findUnique({
-      where: { user_id: id },
-      select: { user_id: true },
+  async findUserById(id: number): Promise<{ id: number } | null> {
+    return prisma.users.findUnique({
+      where: { id },
+      select: { id: true },
     });
   },
 
-  async findUsersByRoleId(roleId: number): Promise<{ user_id: number; email: string; first_name: string | null; last_name: string | null }[]> {
-    const userRoles = await prisma.userRole.findMany({
+  async findUsersByRoleId(roleId: number): Promise<{ id: number; email: string; first_name: string | null; last_name: string | null }[]> {
+    const userRoles = await prisma.user_roles.findMany({
       where: { role_id: roleId },
       include: {
-        user: {
+        users: {
           include: {
-            profile: { select: { first_name: true, last_name: true } },
+            profiles: { select: { first_name: true, last_name: true } },
           },
         },
       },
     });
 
     return userRoles.map((ur) => ({
-      user_id: ur.user.user_id,
-      email: ur.user.email,
-      first_name: ur.user.profile?.first_name ?? null,
-      last_name: ur.user.profile?.last_name ?? null,
+      id: ur.users.id,
+      email: ur.users.email,
+      first_name: ur.users.profiles?.first_name ?? null,
+      last_name: ur.users.profiles?.last_name ?? null,
     }));
   },
 
-  async findRolesByPermissionId(permissionId: number): Promise<{ role_id: number; name: string }[]> {
-    const rolePermissions = await prisma.rolePermission.findMany({
+  async findRolesByPermissionId(permissionId: number): Promise<{ id: number; name: string }[]> {
+    const rolePermissions = await prisma.role_permissions.findMany({
       where: { permission_id: permissionId },
-      include: { role: { select: { role_id: true, name: true } } },
+      include: { roles: { select: { id: true, name: true } } },
     });
 
-    return rolePermissions.map((rp) => rp.role);
+    return rolePermissions.map((rp) => rp.roles);
   },
 
-  async findUserRoles(userId: number): Promise<{ role_id: number; name: string }[]> {
-    const userRoles = await prisma.userRole.findMany({
+  async findUserRoles(userId: number): Promise<{ id: number; name: string }[]> {
+    const userRoles = await prisma.user_roles.findMany({
       where: { user_id: userId },
-      include: { role: { select: { role_id: true, name: true } } },
+      include: { roles: { select: { id: true, name: true } } },
     });
 
-    return userRoles.map((ur) => ur.role);
+    return userRoles.map((ur) => ur.roles);
   },
 
   async assignRoleToUser(userId: number, roleId: number): Promise<void> {
-    await prisma.userRole.create({
+    await prisma.user_roles.create({
       data: { user_id: userId, role_id: roleId },
     });
   },
 
   async removeRoleFromUser(userId: number, roleId: number): Promise<void> {
-    await prisma.userRole.delete({
+    await prisma.user_roles.delete({
       where: { user_id_role_id: { user_id: userId, role_id: roleId } },
     });
   },
 
   async isUserAssignedToRole(userId: number, roleId: number): Promise<boolean> {
-    const ur = await prisma.userRole.findUnique({
+    const ur = await prisma.user_roles.findUnique({
       where: { user_id_role_id: { user_id: userId, role_id: roleId } },
     });
     return ur !== null;

@@ -1,122 +1,110 @@
 import { Prisma } from "@prisma/client";
-import type { UserStatus } from "@prisma/client";
 import prisma from "../../../framework/config/prisma.js";
 import type { UpdateProfileInput } from "./users.validator.js";
 
-type UserInclude = {
-  profile: { include: { avatar: true } };
-  user_role: { include: { role: true } };
+const userInclude = {
+  profiles: { select: { first_name: true, last_name: true, date_of_birth: true, address: true, avatar: true, level_id: true, speciality_id: true } },
+  user_roles: { include: { roles: true } },
 };
 
-const userInclude: UserInclude = {
-  profile: { include: { avatar: true } },
-  user_role: {
-    include: { role: true },
-  },
-};
-
-type UserWithRelations = Prisma.UserGetPayload<{ include: UserInclude }>;
+type UserWithRelations = Prisma.usersGetPayload<{ include: typeof userInclude }>;
 
 export interface AuthUserResult {
-  user_id: number;
+  id: number;
   email: string;
-  password_hash: string;
+  password: string;
   status: string;
   profile: { first_name: string | null; last_name: string | null } | null;
   roles: string[];
 }
 
 export interface UserResponse {
-  user_id: number;
+  id: number;
   email: string;
   status: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: Date | null;
+  updated_at: Date | null;
   profile: {
     first_name: string | null;
     last_name: string | null;
-    date_birth: Date | null;
+    date_of_birth: Date | null;
     address: string | null;
-    avatar_file_id: number | null;
-    avatar_url: string | null;
+    avatar: string | null;
     level_id: number | null;
-    specialization_id: number | null;
+    speciality_id: number | null;
   } | null;
   roles: string[];
 }
 
 function toResponse(user: UserWithRelations): UserResponse {
   return {
-    user_id: user.user_id,
+    id: user.id,
     email: user.email,
     status: user.status,
     created_at: user.created_at,
     updated_at: user.updated_at,
-    profile: user.profile
+    profile: user.profiles
       ? {
-        first_name: user.profile.first_name,
-        last_name: user.profile.last_name,
-        date_birth: user.profile.date_birth,
-        address: user.profile.address,
-        avatar_file_id: user.profile.avatar_file_id,
-        avatar_url: user.profile.avatar
-          ? `/v1/files/${user.profile.avatar.file_id}/download?disposition=inline`
-          : null,
-        level_id: user.profile.level_id,
-        specialization_id: user.profile.specialization_id,
+        first_name: user.profiles.first_name,
+        last_name: user.profiles.last_name,
+        date_of_birth: user.profiles.date_of_birth,
+        address: user.profiles.address,
+        avatar: user.profiles.avatar,
+        level_id: user.profiles.level_id,
+        speciality_id: user.profiles.speciality_id,
       }
       : null,
-    roles: user.user_role.map((r) => r.role.name),
+    roles: user.user_roles.map((r) => r.roles.name),
   };
 }
 
 export const userRepository = {
   async findById(id: number): Promise<UserResponse | null> {
-    const user = await prisma.user.findUnique({
-      where: { user_id: id },
+    const user = await prisma.users.findUnique({
+      where: { id },
       include: userInclude,
     });
 
     return user ? toResponse(user) : null;
   },
 
-  async findByEmail(email: string): Promise<{ user_id: number } | null> {
-    return prisma.user.findUnique({
+  async findByEmail(email: string): Promise<{ id: number } | null> {
+    return prisma.users.findUnique({
       where: { email },
-      select: { user_id: true },
+      select: { id: true },
     });
   },
 
   async findAuthByEmail(email: string): Promise<AuthUserResult | null> {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { email },
       include: {
-        profile: { select: { first_name: true, last_name: true } },
-        user_role: { include: { role: { select: { name: true } } } },
+        profiles: { select: { first_name: true, last_name: true, date_of_birth: true, address: true, avatar: true, level_id: true, speciality_id: true } },
+        user_roles: { include: { roles: { select: { name: true } } } },
       },
     });
 
     if (!user) return null;
 
     return {
-      user_id: user.user_id,
+      id: user.id,
       email: user.email,
-      password_hash: user.password_hash,
+      password: user.password,
       status: user.status,
-      profile: user.profile
-        ? { first_name: user.profile.first_name, last_name: user.profile.last_name }
+      profile: user.profiles
+        ? { first_name: user.profiles.first_name, last_name: user.profiles.last_name }
         : null,
-      roles: user.user_role.map((r) => r.role.name),
+      roles: user.user_roles.map((r) => r.roles.name),
     };
   },
 
   async findManyWithCursor(cursor: number | undefined, limit: number) {
-    const users = await prisma.user.findMany({
+    const users = await prisma.users.findMany({
       take: limit + 1,
-      cursor: cursor ? { user_id: cursor } : undefined,
+      cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
       include: userInclude,
-      orderBy: { user_id: "asc" },
+      orderBy: { id: "asc" },
     });
 
     const hasMore = users.length > limit;
@@ -124,20 +112,20 @@ export const userRepository = {
 
     return {
       data: data.map(toResponse),
-      nextCursor: hasMore ? data[data.length - 1].user_id : null,
+      nextCursor: hasMore ? data[data.length - 1].id : null,
       hasMore,
     };
   },
 
   async findManyWithOffset(skip: number, take: number) {
     const [users, total] = await Promise.all([
-      prisma.user.findMany({
+      prisma.users.findMany({
         take,
         skip,
         include: userInclude,
-        orderBy: { user_id: "asc" },
+        orderBy: { id: "asc" },
       }),
-      prisma.user.count(),
+      prisma.users.count(),
     ]);
 
     return {
@@ -147,33 +135,33 @@ export const userRepository = {
   },
 
   async exists(id: number): Promise<boolean> {
-    const user = await prisma.user.findUnique({
-      where: { user_id: id },
-      select: { user_id: true },
+    const user = await prisma.users.findUnique({
+      where: { id },
+      select: { id: true },
     });
     return user !== null;
   },
 
   async update(
     id: number,
-    data: { status?: string; first_name?: string; last_name?: string; avatar_file_id?: number | null }
+    data: { status?: string; first_name?: string; last_name?: string; avatar?: string | null }
   ): Promise<UserResponse> {
-    const user = await prisma.user.update({
-      where: { user_id: id },
+    const user = await prisma.users.update({
+      where: { id },
       data: {
-        ...(data.status && { status: data.status as UserStatus }),
-        ...((data.first_name || data.last_name || data.avatar_file_id !== undefined) && {
-          profile: {
+        ...(data.status && { status: data.status }),
+        ...((data.first_name || data.last_name || data.avatar !== undefined) && {
+          profiles: {
             upsert: {
               create: {
-                first_name: data.first_name ?? null,
-                last_name: data.last_name ?? null,
-                ...(data.avatar_file_id !== undefined && { avatar_file_id: data.avatar_file_id }),
+                first_name: data.first_name ?? "",
+                last_name: data.last_name ?? "",
+                ...(data.avatar !== undefined && { avatar: data.avatar }),
               },
               update: {
                 ...(data.first_name && { first_name: data.first_name }),
                 ...(data.last_name && { last_name: data.last_name }),
-                ...(data.avatar_file_id !== undefined && { avatar_file_id: data.avatar_file_id }),
+                ...(data.avatar !== undefined && { avatar: data.avatar }),
               },
             },
           },
@@ -186,10 +174,9 @@ export const userRepository = {
   },
 
   async delete(id: number): Promise<void> {
-    await prisma.user.delete({ where: { user_id: id } });
+    await prisma.users.delete({ where: { id } });
   },
 
-  // Profile methods
   async findProfileByUserId(userId: number) {
     return prisma.profiles.findUnique({
       where: { user_id: userId },

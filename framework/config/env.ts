@@ -12,6 +12,7 @@ const envSchema = z.object({
 
   // Database
   DATABASE_URL: z.string().url(),
+  REDIS_URL: z.string().default("redis://localhost:6379"),
 
   // Auth (JWT)
   ACCESS_SECRET: z.string().min(16),

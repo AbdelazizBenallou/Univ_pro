@@ -36,7 +36,7 @@ export const roleService = {
       throw new AppError("Role not found", 404);
     }
     const duplicate = await roleRepository.findByName(data.name);
-    if (duplicate && duplicate.role_id !== id) {
+    if (duplicate && duplicate.id !== id) {
       throw new AppError("Role name already exists", 409);
     }
     return roleRepository.update(id, data.name);
@@ -80,7 +80,7 @@ export const roleService = {
       throw new AppError("Permission not found", 404);
     }
     const duplicate = await roleRepository.findPermissionByName(data.name);
-    if (duplicate && duplicate.permission_id !== id) {
+    if (duplicate && duplicate.id !== id) {
       throw new AppError("Permission name already exists", 409);
     }
     return roleRepository.updatePermission(id, data.name);

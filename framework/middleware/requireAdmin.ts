@@ -9,12 +9,12 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    const userRoles = await prisma.userRole.findMany({
+    const userRoles = await prisma.user_roles.findMany({
       where: { user_id: req.user.userId },
-      include: { role: true },
+      include: { roles: true },
     });
 
-    const isAdmin = userRoles.some((ur) => ur.role.name === "Admin");
+    const isAdmin = userRoles.some((ur) => ur.roles.name === "Admin");
 
     if (!isAdmin) {
       response.error(res, "Forbidden: Admin access required", 403);

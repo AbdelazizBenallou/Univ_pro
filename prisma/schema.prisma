@@ -63,6 +63,21 @@ model downloads {
   @@index([user_id], map: "idx_downloads_user")
 }
 
+model files {
+  id            Int        @id @default(autoincrement())
+  user_id       Int
+  original_name String     @db.VarChar(255)
+  stored_name   String     @db.VarChar(255)
+  mime_type     String     @db.VarChar(100)
+  size          Int
+  category      String     @default("other") @db.VarChar(50)
+  created_at    DateTime?  @default(now()) @db.Timestamp(6)
+  users         users      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([stored_name])
+  @@index([user_id], map: "idx_files_user")
+}
+
 model lesson_files {
   id               Int            @id @default(autoincrement())
   name             String         @db.VarChar(255)
@@ -235,6 +250,7 @@ model role_permissions {
   roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([permission_id], map: "idx_role_permissions_permission")
+  @@unique([role_id, permission_id])
   @@index([role_id], map: "idx_role_permissions_role")
 }
 
@@ -362,6 +378,7 @@ model user_roles {
   roles      roles     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@unique([user_id, role_id])
   @@index([role_id], map: "idx_user_roles_role")
   @@index([user_id], map: "idx_user_roles_user")
 }
@@ -377,6 +394,7 @@ model users {
   devices                                                   devices[]
   downloads                                                 downloads[]
   email_verifications                                       email_verifications[]
+  files                                                     files[]
   login_history                                             login_history[]
   notifications                                             notifications[]
   profiles                                                  profiles?
