@@ -36,6 +36,9 @@ uploads/
 DB/backups/
 DB/certs/
 
+# Allow Prisma migration SQL files
+!prisma/migrations/**/*.sql
+
 # =====================
 # SSL certificates
 # =====================

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "semesters" ADD COLUMN "start_date" DATE NOT NULL DEFAULT '2025-09-15';
+ALTER TABLE "semesters" ADD COLUMN "end_date" DATE NOT NULL DEFAULT '2026-06-30';
