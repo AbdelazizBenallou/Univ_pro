@@ -45,3 +45,37 @@ export const uploadBatch = multer({
     fileSize: env.UPLOAD_MAX_BATCH_SIZE,
   },
 });
+
+const lessonFileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowed = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "text/csv",
+    "video/mp4",
+    "video/webm",
+    "video/ogg",
+  ];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`File type ${file.mimetype} not allowed`));
+  }
+};
+
+export const lessonFileUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: lessonFileFilter,
+  limits: { fileSize: env.UPLOAD_MAX_BATCH_SIZE },
+});
+
+export const lessonFileBatchUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: lessonFileFilter,
+  limits: { fileSize: env.UPLOAD_MAX_BATCH_SIZE, files: 50 },
+});

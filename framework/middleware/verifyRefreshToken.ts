@@ -29,9 +29,9 @@ export const verifyRefreshToken = async (req: Request, res: Response, next: Next
     return;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { user_id: decoded.userId },
-    select: { user_id: true, status: true },
+  const user = await prisma.users.findUnique({
+    where: { id: decoded.userId },
+    select: { id: true, status: true },
   });
 
   if (!user) {
@@ -44,13 +44,12 @@ export const verifyRefreshToken = async (req: Request, res: Response, next: Next
     return;
   }
 
-  const storedTokens = await prisma.refreshToken.findMany({
+  const storedTokens = await prisma.refresh_tokens.findMany({
     where: {
       user_id: decoded.userId,
-      revoked: false,
       expires_at: { gt: new Date() },
     },
-    select: { refresh_token_id: true, token: true },
+    select: { id: true, token: true },
   });
 
   const match = await findTokenMatch(storedTokens, refreshToken);
@@ -65,9 +64,9 @@ export const verifyRefreshToken = async (req: Request, res: Response, next: Next
 };
 
 async function findTokenMatch(
-  tokens: { refresh_token_id: number; token: string }[],
+  tokens: { id: number; token: string }[],
   rawToken: string
-): Promise<{ refresh_token_id: number } | null> {
+): Promise<{ id: number } | null> {
   for (const t of tokens) {
     const isValid = await hash.verifyToken(t.token, rawToken).catch(() => false);
     if (isValid) return t;

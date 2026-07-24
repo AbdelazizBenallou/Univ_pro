@@ -14,3 +14,16 @@ export const zodValidate = (schema: ZodSchema) => {
     next();
   };
 };
+
+export const zodValidateQuery = (schema: ZodSchema) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.query);
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message).join(", ");
+      response.error(res, messages, 400);
+      return;
+    }
+    (req as any).validatedQuery = result.data;
+    next();
+  };
+};

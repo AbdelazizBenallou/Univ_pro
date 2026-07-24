@@ -1,23 +1,99 @@
+# =====================
+# Dependencies
+# =====================
 node_modules/
+
+# =====================
+# Build output
+# =====================
 dist/
+
+# =====================
+# Environment & secrets
+# =====================
 .env
 .env.*
+!.env.example
+
+# =====================
+# Logs
+# =====================
 *.log
-coverage/
+logs/
+
+# =====================
+# Uploads & user files
+# =====================
 uploads/
-System-Documentation.pdf
-Backend-Summary.pdf
+
+# =====================
+# Database backups & dumps
+# =====================
 *.sql
 *.sql.gz
 *.backup
 *.back
-.DS_Store
-*.tsbuildinfo
-/tmp/
-.venv/
+DB/backups/
 DB/certs/
+
+# =====================
+# SSL certificates
+# =====================
 *.crt
 *.key
+*.pem
+
+# =====================
+# OS files
+# =====================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =====================
+# IDE / Editor
+# =====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vscode/settings.json
+
+# =====================
+# Test coverage
+# =====================
+coverage/
+
+# =====================
+# TypeScript cache
+# =====================
+*.tsbuildinfo
+
+# =====================
+# Temp & misc
+# =====================
+/tmp/
+.venv/
+__pycache__/
+
+# =====================
+# Project docs (not source)
+# =====================
+System-Documentation.pdf
+Backend-Summary.pdf
+PRODUCTION-DEPLOYMENT.txt
 Screenshot_*
 api_endpoints.txt
 code.txt
+
+# =====================
+# Local run scripts
+# =====================
+run.bat
+run.ps1
+
+# =====================
+# Package lock (optional — uncomment if you want to ignore)
+# =====================
+# package-lock.json

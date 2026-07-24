@@ -7,148 +7,397 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserStatus {
-  active
-  inactive
-  locked
-  suspended
+model academic_programs {
+  id           Int            @id @default(autoincrement())
+  name         String         @db.VarChar(255)
+  created_at   DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at   DateTime?      @default(now()) @db.Timestamp(6)
+  levels       levels[]
+  specialities specialities[]
 }
 
-model User {
-  user_id       Int           @id @default(autoincrement())
-  email         String        @unique
-  password_hash String
-  status        UserStatus    @default(active)
-  created_at    DateTime      @default(now()) @db.Timestamp(6)
-  updated_at    DateTime      @updatedAt @db.Timestamp(6)
-
-  profile        Profile?
-  refresh_tokens RefreshToken[]
-  user_role      UserRole[]
-  login_history  LoginHistory[]
-  files          File[]
-
-  @@index([email], map: "idx_users_email")
+model activity_types {
+  id                Int                 @id @default(autoincrement())
+  name              String              @db.VarChar(50)
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
+  lesson_files      lesson_files[]
+  module_components module_components[]
 }
 
-model Profile {
-  user_id           Int              @id
-  first_name        String?
-  last_name         String?
-  date_birth        DateTime?        @db.Date
-  address           String?
-  avatar_file_id    Int?
-  level_id          Int?
-  specialization_id Int?
+model admin_levels {
+  user_id    Int
+  level_id   Int
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  levels     levels    @relation(fields: [level_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user            User            @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  avatar          File?           @relation("AvatarFile", fields: [avatar_file_id], references: [file_id])
-  level           Level?          @relation(fields: [level_id], references: [level_id])
-  specialization  Specialization? @relation(fields: [specialization_id], references: [specialization_id])
+  @@id([user_id, level_id])
+  @@index([level_id], map: "idx_admin_levels_level")
+  @@index([user_id], map: "idx_admin_levels_user")
 }
 
-model Role {
-  role_id         Int               @id @default(autoincrement())
-  name            String            @unique
-  role_permission RolePermission[]
-  user_role       UserRole[]
+model devices {
+  id                 Int       @id @default(autoincrement())
+  user_id            Int
+  device_fingerprint String    @unique @db.VarChar(500)
+  device_name        String    @db.VarChar(255)
+  last_active        DateTime? @db.Timestamp(6)
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+  updated_at         DateTime? @default(now()) @db.Timestamp(6)
+  users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([device_fingerprint], map: "idx_devices_fingerprint")
+  @@index([user_id], map: "idx_devices_user")
 }
 
-model Permission {
-  permission_id   Int               @id @default(autoincrement())
-  name            String            @unique
-  role_permission RolePermission[]
+model downloads {
+  id             Int          @id @default(autoincrement())
+  user_id        Int
+  lesson_file_id Int
+  downloaded_at  DateTime?    @default(now()) @db.Timestamp(6)
+  lesson_files   lesson_files @relation(fields: [lesson_file_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users          users        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([lesson_file_id], map: "idx_downloads_file")
+  @@index([user_id], map: "idx_downloads_user")
 }
 
-model UserRole {
-  user_id Int
-  role_id Int
+model lesson_files {
+  id               Int            @id @default(autoincrement())
+  name             String         @db.VarChar(255)
+  description      String?
+  url              String         @db.VarChar(500)
+  file_type        String         @db.VarChar(50)
+  module_id        Int
+  activity_type_id Int
+  season_id        Int
+  uploaded_at      DateTime?      @default(now()) @db.Timestamp(6)
+  created_at       DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?      @default(now()) @db.Timestamp(6)
+  downloads        downloads[]
+  activity_types   activity_types @relation(fields: [activity_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  modules          modules        @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  seasons          seasons        @relation(fields: [season_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  role Role @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
-
-  @@id([user_id, role_id])
+  @@index([activity_type_id], map: "idx_lesson_files_activity")
+  @@index([module_id], map: "idx_lesson_files_module")
+  @@index([season_id], map: "idx_lesson_files_season")
 }
 
-model RolePermission {
-  role_id       Int
-  permission_id Int
+model levels {
+  id                  Int               @id @default(autoincrement())
+  name                String            @db.VarChar(50)
+  academic_program_id Int
+  created_at          DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?         @default(now()) @db.Timestamp(6)
+  admin_levels        admin_levels[]
+  academic_programs   academic_programs @relation(fields: [academic_program_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles            profiles[]
+  semesters           semesters[]
 
-  role       Role       @relation(fields: [role_id], references: [role_id], onDelete: Cascade)
-  permission Permission @relation(fields: [permission_id], references: [permission_id], onDelete: Cascade)
-
-  @@id([role_id, permission_id])
+  @@index([academic_program_id], map: "idx_levels_program")
 }
 
-model RefreshToken {
-  refresh_token_id Int      @id @default(autoincrement())
-  user_id          Int
-  token            String   @unique
-  expires_at       DateTime @db.Timestamp(6)
-  created_at       DateTime @default(now()) @db.Timestamp(6)
-  revoked          Boolean  @default(false)
-
-  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-
-  @@index([user_id], map: "idx_refresh_tokens_user")
-}
-
-model LoginHistory {
-  login_history_id Int      @id @default(autoincrement())
-  user_id          Int
-  login_at         DateTime @default(now()) @db.Timestamp(6)
-  logout_at        DateTime? @db.Timestamp(6)
-  ip_address       String?
-  user_agent       String?
-
-  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+model login_history {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  ip_address String?   @db.VarChar(50)
+  user_agent String?   @db.VarChar(500)
+  login_at   DateTime? @default(now()) @db.Timestamp(6)
+  success    Boolean
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([user_id], map: "idx_login_history_user")
 }
 
-model File {
-  file_id       Int      @id @default(autoincrement())
+model module_components {
+  id               Int            @id @default(autoincrement())
+  module_id        Int
+  activity_type_id Int
+  created_at       DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?      @default(now()) @db.Timestamp(6)
+  activity_types   activity_types @relation(fields: [activity_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  modules          modules        @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([activity_type_id], map: "idx_module_components_activity")
+  @@index([module_id], map: "idx_module_components_module")
+}
+
+model modules {
+  id                Int                 @id @default(autoincrement())
+  name              String              @db.VarChar(255)
+  code              String              @db.VarChar(50)
+  coefficient       Decimal             @db.Decimal(3, 1)
+  credit            Int
+  semester_id       Int
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
+  speciality_id     Int?
+  lesson_files      lesson_files[]
+  module_components module_components[]
+  semesters         semesters           @relation(fields: [semester_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  specialities      specialities?       @relation(fields: [speciality_id], references: [id], onUpdate: NoAction)
+
+  @@index([code], map: "idx_modules_code")
+  @@index([semester_id], map: "idx_modules_semester")
+}
+
+model notifications {
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  title          String    @db.VarChar(255)
+  message        String
+  is_read        Boolean?  @default(false)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  type           String?   @default("info") @db.VarChar(50)
+  reference_id   Int?
+  reference_type String?   @db.VarChar(50)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_notifications_user")
+}
+
+model permissions {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique @db.VarChar(100)
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamp(6)
+  role_permissions role_permissions[]
+}
+
+model phone_providers {
+  id         Int        @id @default(autoincrement())
+  name       String     @unique @db.VarChar(100)
+  code       String     @unique @db.VarChar(20)
+  created_at DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at DateTime?  @default(now()) @db.Timestamp(6)
+  profiles   profiles[]
+}
+
+model profiles {
+  id                 Int                  @id @default(autoincrement())
+  user_id            Int                  @unique
+  first_name         String               @db.VarChar(100)
+  last_name          String               @db.VarChar(100)
+  phone              String?              @db.VarChar(20)
+  phone_provider_id  Int?
+  date_of_birth      DateTime?            @db.Date
+  gender             String?              @db.VarChar(10)
+  address            String?
+  student_id         String?              @unique @db.VarChar(50)
+  avatar             String?              @db.VarChar(500)
+  level_id           Int?
+  speciality_id      Int?
+  created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
+  levels             levels?              @relation(fields: [level_id], references: [id], onUpdate: NoAction)
+  phone_providers    phone_providers?     @relation(fields: [phone_provider_id], references: [id], onUpdate: NoAction)
+  specialities       specialities?        @relation(fields: [speciality_id], references: [id], onUpdate: NoAction)
+  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  social_media_links social_media_links[]
+
+  @@index([level_id], map: "idx_profiles_level")
+  @@index([student_id], map: "idx_profiles_student")
+  @@index([user_id], map: "idx_profiles_user")
+}
+
+model refresh_tokens {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  token      String    @unique @db.VarChar(500)
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_refresh_tokens_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reviews {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  rating     Int
+  comment    String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_reviews_user")
+}
+
+model role_permissions {
+  id            Int         @id @default(autoincrement())
+  role_id       Int
+  permission_id Int
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([permission_id], map: "idx_role_permissions_permission")
+  @@index([role_id], map: "idx_role_permissions_role")
+}
+
+model roles {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique @db.VarChar(50)
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamp(6)
+  role_permissions role_permissions[]
+  user_roles       user_roles[]
+}
+
+model seasons {
+  id           Int            @id @default(autoincrement())
+  name         String         @db.VarChar(20)
+  is_current   Boolean        @default(false)
+  created_at   DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at   DateTime?      @default(now()) @db.Timestamp(6)
+  lesson_files lesson_files[]
+}
+
+model semesters {
+  id                   Int                    @id @default(autoincrement())
+  name                 String                 @db.VarChar(10)
+  level_id             Int
+  is_current           Boolean                @default(false)
+  start_date           DateTime               @db.Date
+  end_date             DateTime               @db.Date
+  created_at           DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  modules              modules[]
+  levels               levels                 @relation(fields: [level_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subscription_demands subscription_demands[]
+  subscriptions        subscriptions[]
+
+  @@index([level_id], map: "idx_semesters_level")
+}
+
+model settings {
+  id          Int       @id @default(autoincrement())
+  key         String    @unique @db.VarChar(100)
+  value       String
+  description String?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model social_media_links {
+  id         Int       @id @default(autoincrement())
+  profile_id Int
+  platform   String    @db.VarChar(50)
+  url        String    @db.VarChar(500)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  profiles   profiles  @relation(fields: [profile_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([profile_id], map: "idx_social_media_profile")
+}
+
+model specialities {
+  id                   Int                    @id @default(autoincrement())
+  name                 String                 @db.VarChar(255)
+  academic_program_id  Int
+  created_at           DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  code                 String?                @db.VarChar(50)
+  modules              modules[]
+  profiles             profiles[]
+  academic_programs    academic_programs      @relation(fields: [academic_program_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subscription_demands subscription_demands[]
+  subscriptions        subscriptions[]
+
+  @@index([academic_program_id], map: "idx_specialities_program")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model subscription_demands {
+  id                                         Int           @id @default(autoincrement())
+  user_id                                    Int
+  semester_id                                Int
+  type                                       String        @db.VarChar(20)
+  status                                     String        @default("pending") @db.VarChar(20)
+  admin_id                                   Int?
+  admin_note                                 String?
+  requested_at                               DateTime?     @default(now()) @db.Timestamp(6)
+  processed_at                               DateTime?     @db.Timestamp(6)
+  created_at                                 DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at                                 DateTime?     @default(now()) @db.Timestamp(6)
+  speciality_id                              Int?
+  users_subscription_demands_admin_idTousers users?        @relation("subscription_demands_admin_idTousers", fields: [admin_id], references: [id], onUpdate: NoAction)
+  semesters                                  semesters     @relation(fields: [semester_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  specialities                               specialities? @relation(fields: [speciality_id], references: [id], onUpdate: NoAction)
+  users_subscription_demands_user_idTousers  users         @relation("subscription_demands_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([speciality_id], map: "idx_subdemands_speciality")
+  @@index([status], map: "idx_subdemands_status")
+  @@index([user_id], map: "idx_subdemands_user")
+}
+
+model subscriptions {
+  id            Int           @id @default(autoincrement())
   user_id       Int
-  original_name String
-  stored_name   String   @unique
-  mime_type     String
-  size          Int
-  category      String   @default("other")
-  created_at    DateTime @default(now()) @db.Timestamp(6)
+  semester_id   Int
+  type          String        @db.VarChar(20)
+  start_date    DateTime      @db.Date
+  end_date      DateTime      @db.Date
+  status        String        @default("active") @db.VarChar(20)
+  created_at    DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?     @default(now()) @db.Timestamp(6)
+  speciality_id Int?
+  semesters     semesters     @relation(fields: [semester_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  specialities  specialities? @relation(fields: [speciality_id], references: [id], onUpdate: NoAction)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user         User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  avatar_profi Profile[] @relation("AvatarFile")
+  @@index([semester_id], map: "idx_subscriptions_semester")
+  @@index([speciality_id], map: "idx_subscriptions_speciality")
+  @@index([user_id], map: "idx_subscriptions_user")
 }
 
-model DegreeLevel {
-  degree_level_id Int     @id @default(autoincrement())
-  name            String  @unique
-  level           Level[]
+model user_roles {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  role_id    Int
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  roles      roles     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([role_id], map: "idx_user_roles_role")
+  @@index([user_id], map: "idx_user_roles_user")
 }
 
-model Level {
-  level_id             Int                    @id @default(autoincrement())
-  name                 String
-  created_at           DateTime               @default(now()) @db.Timestamp(6)
-  degree_level_id      Int
-  degree_level         DegreeLevel            @relation(fields: [degree_level_id], references: [degree_level_id], onDelete: Cascade)
-  level_specialization LevelSpecialization[]
-  profile              Profile[]
+model users {
+  id                                                        Int                    @id @default(autoincrement())
+  email                                                     String                 @unique @db.VarChar(255)
+  password                                                  String                 @db.VarChar(255)
+  status                                                    String                 @default("pending") @db.VarChar(20)
+  created_at                                                DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at                                                DateTime?              @default(now()) @db.Timestamp(6)
+  admin_levels                                              admin_levels[]
+  devices                                                   devices[]
+  downloads                                                 downloads[]
+  email_verifications                                       email_verifications[]
+  login_history                                             login_history[]
+  notifications                                             notifications[]
+  profiles                                                  profiles?
+  refresh_tokens                                            refresh_tokens[]
+  reviews                                                   reviews[]
+  subscription_demands_subscription_demands_admin_idTousers subscription_demands[] @relation("subscription_demands_admin_idTousers")
+  subscription_demands_subscription_demands_user_idTousers  subscription_demands[] @relation("subscription_demands_user_idTousers")
+  subscriptions                                             subscriptions[]
+  user_roles                                                user_roles[]
 }
 
-model Specialization {
-  specialization_id    Int                    @id @default(autoincrement())
-  name                 String                 @unique
-  level_specialization LevelSpecialization[]
-  profile              Profile[]
-}
+model email_verifications {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  code       String    @db.VarChar(6)
+  expires_at DateTime  @db.Timestamp(6)
+  used       Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  type       String    @default("email_verify") @db.VarChar(20)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-model LevelSpecialization {
-  level_id          Int
-  specialization_id Int
-
-  level          Level          @relation(fields: [level_id], references: [level_id], onDelete: Cascade)
-  specialization Specialization @relation(fields: [specialization_id], references: [specialization_id], onDelete: Cascade)
-
-  @@id([level_id, specialization_id])
+  @@index([user_id, code, used], map: "idx_email_ver_lookup")
+  @@index([user_id, type, created_at], map: "idx_email_ver_type")
 }

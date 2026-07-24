@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { usersService } from "./users.service.js";
 import { response } from "../../../framework/utils/response.js";
-import type { ListUsersInput } from "./users.validator.js";
+import type { ListUsersInput, UpdateProfileInput } from "./users.validator.js";
 import { asyncHandler } from "../../../framework/middleware/asyncHandler.js";
 
 export const usersController = {
@@ -48,5 +48,17 @@ export const usersController = {
     await usersService.remove(id);
 
     response.success(res, null, "User deleted successfully");
+  }),
+
+  getMyProfile: asyncHandler(async (req: Request, res: Response) => {
+    const data = await usersService.getMyProfile(req.user!.userId);
+
+    response.success(res, data, "Profile fetched successfully");
+  }),
+
+  updateMyProfile: asyncHandler(async (req: Request, res: Response) => {
+    const data = await usersService.updateMyProfile(req.user!.userId, req.body as UpdateProfileInput);
+
+    response.success(res, data, "Profile updated successfully");
   }),
 };

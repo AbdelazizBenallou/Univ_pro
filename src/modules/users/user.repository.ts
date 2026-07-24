@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import type { UserStatus } from "@prisma/client";
 import prisma from "../../../framework/config/prisma.js";
+import type { UpdateProfileInput } from "./users.validator.js";
 
 type UserInclude = {
   profile: { include: { avatar: true } };
@@ -186,5 +187,51 @@ export const userRepository = {
 
   async delete(id: number): Promise<void> {
     await prisma.user.delete({ where: { user_id: id } });
+  },
+
+  // Profile methods
+  async findProfileByUserId(userId: number) {
+    return prisma.profiles.findUnique({
+      where: { user_id: userId },
+      include: {
+        levels: { select: { id: true, name: true } },
+        specialities: { select: { id: true, name: true, code: true } },
+        phone_providers: { select: { id: true, name: true, code: true } },
+        social_media_links: { select: { platform: true, url: true } },
+      },
+    });
+  },
+
+  async phoneProviderExists(id: number): Promise<boolean> {
+    const provider = await prisma.phone_providers.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    return provider !== null;
+  },
+
+  async updateProfile(userId: number, data: UpdateProfileInput) {
+    const updateData: Record<string, unknown> = {};
+
+    if (data.first_name !== undefined) updateData.first_name = data.first_name;
+    if (data.last_name !== undefined) updateData.last_name = data.last_name;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.phone_provider_id !== undefined) updateData.phone_provider_id = data.phone_provider_id;
+    if (data.date_of_birth !== undefined)
+      updateData.date_of_birth = data.date_of_birth ? new Date(data.date_of_birth) : null;
+    if (data.gender !== undefined) updateData.gender = data.gender;
+    if (data.address !== undefined) updateData.address = data.address;
+    if (data.avatar !== undefined) updateData.avatar = data.avatar;
+
+    return prisma.profiles.update({
+      where: { user_id: userId },
+      data: updateData,
+      include: {
+        levels: { select: { id: true, name: true } },
+        specialities: { select: { id: true, name: true, code: true } },
+        phone_providers: { select: { id: true, name: true, code: true } },
+        social_media_links: { select: { platform: true, url: true } },
+      },
+    });
   },
 };

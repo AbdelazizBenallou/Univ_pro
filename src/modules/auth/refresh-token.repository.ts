@@ -9,7 +9,7 @@ export const refreshTokenRepository = {
     tx?: Prisma.TransactionClient
   ): Promise<void> {
     const client = tx ?? prisma;
-    await client.refreshToken.create({
+    await client.refresh_tokens.create({
       data: {
         user_id: userId,
         token: tokenHash,
@@ -18,21 +18,19 @@ export const refreshTokenRepository = {
     });
   },
 
-  async findValidByUserId(userId: number): Promise<{ refresh_token_id: number; token: string }[]> {
-    return prisma.refreshToken.findMany({
+  async findValidByUserId(userId: number): Promise<{ id: number; token: string }[]> {
+    return prisma.refresh_tokens.findMany({
       where: {
         user_id: userId,
-        revoked: false,
         expires_at: { gt: new Date() },
       },
-      select: { refresh_token_id: true, token: true },
+      select: { id: true, token: true },
     });
   },
 
   async revokeById(id: number): Promise<void> {
-    await prisma.refreshToken.update({
-      where: { refresh_token_id: id },
-      data: { revoked: true },
+    await prisma.refresh_tokens.delete({
+      where: { id },
     });
   },
 };

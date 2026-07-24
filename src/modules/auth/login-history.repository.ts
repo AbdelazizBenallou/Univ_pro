@@ -6,14 +6,16 @@ export const loginHistoryRepository = {
     userId: number,
     ip: string,
     userAgent: string,
+    success: boolean,
     tx?: Prisma.TransactionClient
   ): Promise<void> {
     const client = tx ?? prisma;
-    await client.loginHistory.create({
+    await client.login_history.create({
       data: {
         user_id: userId,
         ip_address: ip,
         user_agent: userAgent,
+        success,
       },
     });
   },

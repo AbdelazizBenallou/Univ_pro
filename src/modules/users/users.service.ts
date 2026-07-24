@@ -1,6 +1,6 @@
 import { AppError } from "../../../framework/utils/AppError.js";
 import { userRepository } from "./user.repository.js";
-import type { ListUsersInput, UpdateUserInput } from "./users.validator.js";
+import type { ListUsersInput, UpdateUserInput, UpdateProfileInput } from "./users.validator.js";
 
 async function getAll(input: ListUsersInput) {
   if (input.page) {
@@ -54,4 +54,31 @@ async function remove(id: number) {
   await userRepository.delete(id);
 }
 
-export const usersService = { getAll, getById, update, remove };
+async function getMyProfile(userId: number) {
+  const profile = await userRepository.findProfileByUserId(userId);
+
+  if (!profile) {
+    throw new AppError("Profile not found", 404);
+  }
+
+  return profile;
+}
+
+async function updateMyProfile(userId: number, data: UpdateProfileInput) {
+  if (data.phone_provider_id !== undefined && data.phone_provider_id !== null) {
+    const providerExists = await userRepository.phoneProviderExists(data.phone_provider_id);
+    if (!providerExists) {
+      throw new AppError("Phone provider not found", 404);
+    }
+  }
+
+  const profile = await userRepository.findProfileByUserId(userId);
+
+  if (!profile) {
+    throw new AppError("Profile not found", 404);
+  }
+
+  return userRepository.updateProfile(userId, data);
+}
+
+export const usersService = { getAll, getById, update, remove, getMyProfile, updateMyProfile };

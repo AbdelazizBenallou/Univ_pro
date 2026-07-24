@@ -26,6 +26,15 @@ const envSchema = z.object({
   UPLOAD_MAX_VIDEO_SIZE: z.coerce.number().default(200 * 1024 * 1024),
   UPLOAD_MAX_BATCH_SIZE: z.coerce.number().default(20 * 1024 * 1024),
   MALWARE_SCANNER_ENABLED: z.coerce.boolean().default(true),
+
+  // MinIO
+  MINIO_ENDPOINT: z.string().default("localhost"),
+  MINIO_PORT: z.coerce.number().default(9000),
+  MINIO_ACCESS_KEY: z.string().default("admin"),
+  MINIO_SECRET_KEY: z.string().default("minioadmin123"),
+  MINIO_BUCKET: z.string().default("univ-pro-files"),
+  MINIO_USE_SSL: z.string().default("false").transform((v) => v === "true" || v === "1"),
+  MINIO_PUBLIC_URL: z.string().default("http://localhost:9000"),
 });
 
 const parsed = envSchema.safeParse(process.env);

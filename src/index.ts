@@ -2,11 +2,19 @@ import app from "./app.js";
 import { env } from "../framework/config/env.js";
 import prisma from "../framework/config/prisma.js";
 import logger from "../framework/config/logger.js";
+import { ensureBucket } from "../framework/utils/minio.js";
 
 const server = async (): Promise<void> => {
   try {
     await prisma.$connect();
     logger.info("PostgreSQL connected");
+
+    try {
+      await ensureBucket();
+      logger.info("MinIO bucket ready");
+    } catch (minioErr) {
+      logger.error({ err: minioErr }, "MinIO init failed — continuing without MinIO");
+    }
 
     app.listen(env.PORT, "0.0.0.0", () => {
       logger.info(`Server running on port ${env.PORT}`);

@@ -4,15 +4,133 @@ import { verifyAccessToken } from "../../../framework/middleware/verifyAccessTok
 import { checkPermission } from "../../../framework/middleware/checkPermission.js";
 import { zodValidate } from "../../../framework/middleware/zodValidate.js";
 import { zodValidateQuery } from "../../../framework/middleware/zodValidateQuery.js";
-import { listUsersSchema, updateUserSchema } from "./users.validator.js";
+import { listUsersSchema, updateUserSchema, updateProfileSchema } from "./users.validator.js";
 import {
   listUsersRateLimit,
   getUserRateLimit,
   updateUserRateLimit,
   deleteUserRateLimit,
+  getMyProfileRateLimit,
+  updateMyProfileRateLimit,
 } from "../../../framework/middleware/rateLimiter.js";
 
 const router = Router();
+
+// ─── /me/profile (authenticated user, no admin permission) ─────────────────
+
+/**
+ * @openapi
+ * /v1/users/me/profile:
+ *   get:
+ *     tags: [Profile]
+ *     summary: Get my profile
+ *     description: Returns the authenticated user's full profile with level, speciality, phone provider, and social media links.
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/UserProfile'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Profile not found
+ */
+router.get(
+  "/me/profile",
+  verifyAccessToken,
+  getMyProfileRateLimit,
+  usersController.getMyProfile
+);
+
+/**
+ * @openapi
+ * /v1/users/me/profile:
+ *   patch:
+ *     tags: [Profile]
+ *     summary: Update my profile
+ *     description: Updates the authenticated user's profile. Only personal fields are editable (level, speciality, student_id are admin-only).
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 100
+ *                 example: Ahmed
+ *               last_name:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 100
+ *                 example: Benali
+ *               phone:
+ *                 type: string
+ *                 nullable: true
+ *                 maxLength: 20
+ *                 example: "0555100201"
+ *               phone_provider_id:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: Required if phone is provided
+ *               date_of_birth:
+ *                 type: string
+ *                 format: date
+ *                 nullable: true
+ *                 example: "1995-06-15"
+ *               gender:
+ *                 type: string
+ *                 enum: [Male, Female]
+ *                 nullable: true
+ *               address:
+ *                 type: string
+ *                 nullable: true
+ *                 maxLength: 500
+ *               avatar:
+ *                 type: string
+ *                 nullable: true
+ *                 maxLength: 500
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/UserProfile'
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Profile not found
+ */
+router.patch(
+  "/me/profile",
+  verifyAccessToken,
+  updateMyProfileRateLimit,
+  zodValidate(updateProfileSchema),
+  usersController.updateMyProfile
+);
+
+// ─── Admin-only routes ─────────────────────────────────────────────────────
 
 router.use(verifyAccessToken, checkPermission("manage_users"));
 

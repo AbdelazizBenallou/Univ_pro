@@ -33,8 +33,8 @@ export const verifyAccessToken = async (req: Request, res: Response, next: NextF
     return;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { user_id: decoded.userId },
+  const user = await prisma.users.findUnique({
+    where: { id: decoded.userId },
     select: { status: true },
   });
 

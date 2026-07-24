@@ -17,13 +17,13 @@ export const checkPermission = (permissionName: string) => {
       let permissions = await cache.get<string[]>(cacheKey);
 
       if (!permissions) {
-        const userRoles = await prisma.userRole.findMany({
+        const userRoles = await prisma.user_roles.findMany({
           where: { user_id: userId },
           include: {
-            role: {
+            roles: {
               include: {
-                role_permission: {
-                  include: { permission: true },
+                role_permissions: {
+                  include: { permissions: true },
                 },
               },
             },
@@ -31,7 +31,7 @@ export const checkPermission = (permissionName: string) => {
         });
 
         permissions = userRoles.flatMap((ur) =>
-          ur.role.role_permission.map((rp) => rp.permission.name)
+          ur.roles.role_permissions.map((rp) => rp.permissions.name)
         );
 
         await cache.set(cacheKey, permissions, 60);
