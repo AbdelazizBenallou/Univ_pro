@@ -4,7 +4,6 @@ import { verifyAccessToken } from "../../../framework/middleware/verifyAccessTok
 import { zodValidateQuery } from "../../../framework/middleware/zodValidate.js";
 import { listLessonFilesSchema } from "./lesson-files.validator.js";
 import { requireLevelAccess } from "../../../framework/middleware/requireLevelAccess.js";
-import { requireSubscription } from "../../../framework/middleware/requireSubscription.js";
 import {
   lessonFileUploadRateLimit,
   lessonFileDownloadRateLimit,
@@ -116,7 +115,6 @@ const router = Router();
 router.get(
   "/",
   verifyAccessToken,
-  requireSubscription("query"),
   zodValidateQuery(listLessonFilesSchema),
   lessonFilesController.findAll
 );
@@ -282,7 +280,6 @@ router.post(
 router.get(
   "/:id/download",
   verifyAccessToken,
-  requireSubscription("lessonFileParam"),
   lessonFileDownloadRateLimit,
   lessonFilesController.download,
 );
