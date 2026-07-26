@@ -53,10 +53,11 @@ export const subscriptionsService = {
   async createDemand(userId: number, data: { semester_id: number; type?: string; speciality_id?: number }) {
     const semester = await prisma.semesters.findUnique({
       where: { id: data.semester_id },
-      select: { id: true, start_date: true, end_date: true },
+      select: { id: true, is_current: true, start_date: true, end_date: true },
     });
 
     if (!semester) throw new AppError("Semester not found", 404);
+    if (!semester.is_current) throw new AppError("You can only subscribe to the current semester", 400);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
