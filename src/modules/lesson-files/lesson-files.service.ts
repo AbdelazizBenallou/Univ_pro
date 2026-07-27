@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import path from "node:path";
 import prisma from "../../../framework/config/prisma.js";
-import { minioClient, buildMinioPath } from "../../../framework/utils/minio.js";
+import { minioClient, minioPublicClient, buildMinioPath } from "../../../framework/utils/minio.js";
 import { env } from "../../../framework/config/env.js";
 import { AppError } from "../../../framework/utils/AppError.js";
 import { parallelQueue } from "../../../framework/utils/queue.js";
@@ -300,7 +300,7 @@ export const lessonFilesService = {
       }
     }
 
-    const presignedUrl = await minioClient.presignedGetObject(env.MINIO_BUCKET, lessonFile.url, 3600);
+    const presignedUrl = await minioPublicClient.presignedGetObject(env.MINIO_BUCKET, lessonFile.url, 3600);
 
     prisma.downloads.create({
       data: {

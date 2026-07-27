@@ -83,12 +83,10 @@ __pycache__/
 # =====================
 # Project docs (not source)
 # =====================
+docs/
 System-Documentation.pdf
 Backend-Summary.pdf
-PRODUCTION-DEPLOYMENT.txt
 Screenshot_*
-api_endpoints.txt
-code.txt
 
 # =====================
 # Local run scripts

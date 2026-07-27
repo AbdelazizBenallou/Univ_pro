@@ -9,6 +9,15 @@ export const minioClient = new Minio.Client({
   useSSL: env.MINIO_USE_SSL,
 });
 
+const publicUrl = new URL(env.MINIO_PUBLIC_URL);
+export const minioPublicClient = new Minio.Client({
+  endPoint: publicUrl.hostname,
+  port: publicUrl.port ? Number(publicUrl.port) : env.MINIO_PORT,
+  accessKey: env.MINIO_ACCESS_KEY,
+  secretKey: env.MINIO_SECRET_KEY,
+  useSSL: env.MINIO_USE_SSL,
+});
+
 export async function ensureBucket(): Promise<void> {
   try {
     const exists = await minioClient.bucketExists(env.MINIO_BUCKET);

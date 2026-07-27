@@ -60,9 +60,36 @@ const lessonFileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileF
     "video/mp4",
     "video/webm",
     "video/ogg",
+    "application/rtf",
+    "application/x-rtf",
+    "text/rtf",
   ];
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
+  } else if (file.mimetype === "application/octet-stream") {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const extMap: Record<string, string> = {
+      ".pdf": "application/pdf",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".webp": "image/webp",
+      ".gif": "image/gif",
+      ".doc": "application/msword",
+      ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".txt": "text/plain",
+      ".csv": "text/csv",
+      ".mp4": "video/mp4",
+      ".webm": "video/webm",
+      ".ogv": "video/ogg",
+      ".rtf": "application/rtf",
+    };
+    if (extMap[ext]) {
+      file.mimetype = extMap[ext];
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} (extension: ${ext}) not allowed`));
+    }
   } else {
     cb(new Error(`File type ${file.mimetype} not allowed`));
   }

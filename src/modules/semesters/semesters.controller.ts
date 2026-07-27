@@ -5,12 +5,8 @@ import { semesterService } from "./semesters.service.js";
 
 export const semesterController = {
   findByLevel: asyncHandler(async (req: Request, res: Response) => {
-    const levelId = Number(req.query.level_id);
-    if (isNaN(levelId)) {
-      response.error(res, "level_id is required", 400);
-      return;
-    }
-    const data = await semesterService.findByLevelId(levelId);
+    const { level_id } = (req as any).validatedQuery;
+    const data = await semesterService.findByLevelId(level_id);
     response.success(res, data, "Semesters fetched successfully");
   }),
 };
