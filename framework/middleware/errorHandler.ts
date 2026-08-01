@@ -3,10 +3,30 @@ import { AppError } from "../utils/AppError.js";
 import { response } from "../utils/response.js";
 import logger from "../config/logger.js";
 
+interface BodyParserError extends Error {
+  status?: number;
+  statusCode?: number;
+  type?: string;
+  expose?: boolean;
+}
+
 export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction): void => {
   if (err instanceof AppError) {
     logger.error({ err, path: req.path, method: req.method, statusCode: err.statusCode }, "Application error");
     response.error(res, err.message, err.statusCode);
+    return;
+  }
+
+  const bodyErr = err as BodyParserError;
+  if (bodyErr.type === "entity.too.large") {
+    logger.warn({ path: req.path, method: req.method }, "Request body too large");
+    response.error(res, "Request body too large", 413);
+    return;
+  }
+
+  if (bodyErr.expose && bodyErr.statusCode && bodyErr.statusCode >= 400 && bodyErr.statusCode < 500) {
+    logger.warn({ err, path: req.path, method: req.method }, "Client request error");
+    response.error(res, err.message, bodyErr.statusCode);
     return;
   }
 

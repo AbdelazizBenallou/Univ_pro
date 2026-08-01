@@ -9,6 +9,13 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   API_URL: z.string().default("http://localhost:3000"),
   CORS_ORIGINS: z.string().default("*"),
+  SWAGGER_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (v !== undefined) return v === "true" || v === "1";
+      return process.env.NODE_ENV !== "production";
+    }),
 
   // Database
   DATABASE_URL: z.string().url(),

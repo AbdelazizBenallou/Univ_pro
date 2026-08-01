@@ -2,12 +2,15 @@ import app from "./app.js";
 import { env } from "../framework/config/env.js";
 import prisma from "../framework/config/prisma.js";
 import logger from "../framework/config/logger.js";
+import { connectRedis, disconnectRedis } from "../framework/config/redis.js";
 import { ensureBucket } from "../framework/utils/minio.js";
 
 const server = async (): Promise<void> => {
   try {
     await prisma.$connect();
     logger.info("PostgreSQL connected");
+
+    await connectRedis();
 
     try {
       await ensureBucket();
@@ -28,6 +31,7 @@ const server = async (): Promise<void> => {
 
 const shutdown = async (): Promise<void> => {
   logger.info("Shutting down...");
+  await disconnectRedis();
   await prisma.$disconnect();
   process.exit(0);
 };

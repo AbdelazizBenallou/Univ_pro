@@ -66,3 +66,10 @@ export const permissionRateLimit = rateLimit(new RateLimiterMemory({ points: 60,
 export const lessonFileUploadRateLimit = rateLimit(new RateLimiterMemory({ points: 30, duration: 60 }));
 export const lessonFileDownloadRateLimit = rateLimit(new RateLimiterMemory({ points: 60, duration: 60 }));
 export const lessonFileDeleteRateLimit = rateLimit(new RateLimiterMemory({ points: 10, duration: 60 }));
+
+// Reviews
+export const createReviewRateLimit = rateLimitByKey(
+  new RateLimiterMemory({ points: 3, duration: 3600 }),
+  (req) => `review:create:${req.user?.userId ?? "anon"}`
+);
+export const listReviewsRateLimit = rateLimit(new RateLimiterMemory({ points: 60, duration: 60 }));
