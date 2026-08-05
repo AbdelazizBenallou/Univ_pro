@@ -1,0 +1,195 @@
+===============================================================
+  UNIV-PRO BACKEND API - DEPLOYMENT GUIDE
+===============================================================
+
+VPS Details:
+  Host:     83.229.87.99
+  SSH:      ssh -i ~/.ssh/server2026-01-1 micro14@83.229.87.99
+  Sudo PW:  784512963
+  App Path: /var/www/Univ_pro
+
+===============================================================
+  HOW TO DEPLOY A NEW VERSION
+===============================================================
+
+1. Push your code to GitHub (from your local machine)
+   git add .
+   git commit -m "vX.X.X - description"
+   git push origin main
+
+2. SSH into VPS
+   ssh -i ~/.ssh/server2026-01-1 micro14@83.229.87.99
+
+3. Pull latest code
+   cd /var/www/Univ_pro
+   git fetch origin
+   git reset --hard origin/main
+
+4. Install dependencies (if package.json changed)
+   npm install
+
+5. Build the project
+   npm run build
+
+6. Run database migrations (if schema changed)
+   npx prisma migrate deploy
+
+7. Restart the app
+   pm2 restart backend-api --update-env
+
+8. Verify it's running
+   pm2 status
+   curl -s http://localhost:3000/health
+
+That's it. PM2 auto-restarts on crash and boots on server reboot.
+
+===============================================================
+  SERVICE STATUS COMMANDS
+===============================================================
+
+  # Check everything
+  pm2 status                       # Node app status
+  systemctl is-active postgresql   # PostgreSQL
+  systemctl is-active redis-server # Redis (or: redis-cli ping)
+  systemctl is-active minio        # MinIO
+  systemctl is-active nginx        # Nginx
+  systemctl is-active postfix      # Email (Postfix)
+
+  # Quick health check
+  curl -s http://83.229.87.99/health
+  curl -s http://localhost:3000/api-docs  # Swagger
+
+===============================================================
+  VPS SERVICES & PORTS
+===============================================================
+
+  Service     Port    Notes
+  ---------   -----   -----
+  Nginx       80      Reverse proxy -> localhost:3000
+  Express     3000    Backend API (PM2 managed)
+  PostgreSQL  5432    Database: univ_pro
+  Redis       6379    Cache/sessions
+  MinIO       9000    Object storage (files)
+  MinIO UI    9001    MinIO console (localhost only)
+  Postfix     25      Email (relays via Gmail SMTP)
+
+===============================================================
+  DATABASE
+===============================================================
+
+  DB Name:    univ_pro
+  DB User:    univ_admin
+  DB Pass:    univpro2026
+  Connect:    psql -U univ_admin -d univ_pro
+
+  Run migrations:   npx prisma migrate deploy
+  Reset DB:         npx prisma migrate reset
+  Open Studio:      npx prisma studio (needs GUI)
+
+===============================================================
+  MINIO (FILE STORAGE)
+===============================================================
+
+  Endpoint:   localhost:9000
+  Public URL: http://83.229.87.99:9000
+  Access Key: admin
+  Secret Key: minioadmin123
+  Bucket:     univ-pro-files
+  Data Dir:   /mnt/data
+
+  MinIO restart:
+    sudo systemctl restart minio
+
+  Check MinIO health:
+    curl -s http://localhost:9000/minio/health/live
+
+===============================================================
+  EMAIL (POSTFIX)
+===============================================================
+
+  Postfix relays through Gmail SMTP (smtp.gmail.com:587)
+  Sender: benallouaziz1414@gmail.com
+  Credentials in: /etc/postfix/sasl_passwd
+
+  Restart Postfix:
+    echo '784512963' | sudo -S systemctl restart postfix
+
+  Check mail logs:
+    echo '784512963' | sudo -S tail -50 /var/log/mail.log
+
+  Test email:
+    echo "Test" | mail -s "Test Subject" your@email.com
+
+===============================================================
+  PM2 MANAGEMENT
+===============================================================
+
+  pm2 status                        # See running processes
+  pm2 logs backend-api              # Tail logs
+  pm2 logs backend-api --lines 50   # Last 50 lines
+  pm2 restart backend-api           # Restart app
+  pm2 stop backend-api              # Stop app
+  pm2 delete backend-api            # Remove app
+  pm2 flush backend-api             # Clear log files
+  pm2 save                          # Save process list (for reboot)
+  pm2 monit                         # Live monitoring dashboard
+
+  PM2 auto-starts on reboot via systemd (pm2-micro14.service)
+
+===============================================================
+  TROUBLESHOOTING
+===============================================================
+
+  App won't start:
+    pm2 logs backend-api --lines 30 --err
+    # Check .env file, DB connection, MinIO
+
+  Email not sending:
+    echo '784512963' | sudo -S tail -20 /var/log/mail.log
+    # Check Postfix status: sudo systemctl status postfix
+
+  File upload/download broken:
+    curl -s http://localhost:9000/minio/health/live
+    # Check MinIO is running and bucket exists
+
+  Out of memory:
+    free -m
+    pm2 status   # Check memory usage
+    # Consider reducing max_memory_restart or adding swap
+
+  Nginx not proxying:
+    echo '784512963' | sudo -S nginx -t
+    echo '784512963' | sudo -S systemctl restart nginx
+
+===============================================================
+  ENVIRONMENT VARIABLES (VPS .env)
+===============================================================
+
+  PORT=3000
+  DATABASE_URL=postgresql://univ_admin:univpro2026@localhost:5432/univ_pro
+  REDIS_URL=redis://localhost:6379
+  MINIO_ENDPOINT=localhost
+  MINIO_PORT=9000
+  MINIO_ACCESS_KEY=admin
+  MINIO_SECRET_KEY=minioadmin123
+  MINIO_BUCKET=univ-pro-files
+  MINIO_USE_SSL=false
+  MINIO_PUBLIC_URL=http://83.229.87.99:9000
+
+===============================================================
+  USEFUL ONE-LINERS
+===============================================================
+
+  # Full restart (app only)
+  cd /var/www/Univ_pro && git fetch origin && git reset --hard origin/main && npm install && npm run build && pm2 restart backend-api --update-env
+
+  # Check all services at once
+  pm2 status && systemctl is-active postgresql redis-server minio nginx postfix
+
+  # Quick deploy (no migration)
+  cd /var/www/Univ_pro && git pull && npm run build && pm2 restart backend-api --update-env
+
+  # Deploy with migrations
+  cd /var/www/Univ_pro && git pull && npm install && npm run build && npx prisma migrate deploy && pm2 restart backend-api --update-env
+
+===============================================================
